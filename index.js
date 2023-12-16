@@ -7,6 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const PORT = process.env.PORT || 3500
+const users = {};
 
 const app = express()
 
@@ -24,6 +25,22 @@ const io = new Server(expressServer, {
 
 io.on('connection', socket => {
     console.log(`User ${socket.id} connected`)
+
+    socket.on('setUserId', (userId) => {
+        users[userId] = socket.id;
+        console.log(`User ${userId} is connected with socket ID ${socket.id}`);
+      });
+
+        // Handle private messages
+  socket.on('privateMessage', (data) => {
+    const { recipientUsername, message } = data;
+    const recipientSocketId = recipientUsername;
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit('privateMessage', { senderId: socket.id, message });
+    } else {
+      console.log(`User ${recipientUsername} not found.`);
+    }
+  });
 
     // Upon connection - only to user 
     socket.emit('message', "Welcome to Chat App!")
